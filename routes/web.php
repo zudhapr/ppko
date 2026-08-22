@@ -5,35 +5,95 @@ use Illuminate\Support\Facades\Route;
 use App\Models\Planting;
 use App\Models\FertigationSchedule;
 use App\Models\Valve;
+use App\Models\Device;
 
 Route::get('/', function () {
-    $planting = Planting::with('fertigationProfile')
-        ->where('is_active', true)
-        ->first();
+
+    $planting = Planting::with(
+        'fertigationProfile'
+    )
+    ->where('is_active', true)
+    ->first();
 
     $hst = null;
     $todaySchedules = collect();
 
     if ($planting) {
-        $hst = $planting->planting_date
-            ->diffInDays(now()->startOfDay());
 
-        $todaySchedules = FertigationSchedule::with('valve')
-            ->where('fertigation_profile_id', $planting->fertigation_profile_id)
-            ->where('hst', $hst)
-            ->where('is_active', true)
-            ->orderBy('start_time')
-            ->get();
+        $hst = (int) $planting
+            ->planting_date
+            ->startOfDay()
+            ->diffInDays(
+                now()->startOfDay(),
+                false
+            );
+
+        if (
+            $hst >= 0 &&
+            $planting->fertigation_profile_id
+        ) {
+
+            $todaySchedules =
+                FertigationSchedule::with([
+                    'valve',
+                    'growthPhase'
+                ])
+                ->where(
+                    'fertigation_profile_id',
+                    $planting->fertigation_profile_id
+                )
+                ->where(
+                    'hst_start',
+                    '<=',
+                    $hst
+                )
+                ->where(
+                    'hst_end',
+                    '>=',
+                    $hst
+                )
+                ->where(
+                    'is_active',
+                    true
+                )
+                ->orderBy('start_time')
+                ->get();
+        }
     }
 
-    $valveCount = Valve::where('is_active', true)->count();
+    $valveCount = Valve::where(
+        'is_active',
+        true
+    )->count();
 
-    return view('welcome', compact(
-        'planting',
-        'hst',
-        'todaySchedules',
-        'valveCount'
-    ));
+
+    // ==========================
+    // DEVICE ESP
+    // ==========================
+
+    $device = Device::where(
+        'is_active',
+        true
+    )->first();
+
+
+    $currentPhase =
+        $todaySchedules
+            ->first()
+            ?->growthPhase;
+
+
+    return view(
+        'welcome',
+        compact(
+            'planting',
+            'hst',
+            'todaySchedules',
+            'valveCount',
+            'device',
+            'currentPhase'
+        )
+    );
 });
 
 use App\Http\Controllers\FertigationScheduleController;
@@ -133,3 +193,34 @@ Route::post('/demo/command', [
     DemoController::class,
     'command'
 ])->name('demo.command');
+
+use App\Http\Controllers\GrowthPhaseController;
+
+Route::get('/master/fase', [
+    GrowthPhaseController::class,
+    'index'
+])->name('phases.index');
+
+
+Route::post('/master/fase', [
+    GrowthPhaseController::class,
+    'store'
+])->name('phases.store');
+
+
+Route::put('/master/fase/{phase}', [
+    GrowthPhaseController::class,
+    'update'
+])->name('phases.update');
+
+
+Route::patch('/master/fase/{phase}/toggle', [
+    GrowthPhaseController::class,
+    'toggle'
+])->name('phases.toggle');
+
+
+Route::delete('/master/fase/{phase}', [
+    GrowthPhaseController::class,
+    'destroy'
+])->name('phases.destroy');

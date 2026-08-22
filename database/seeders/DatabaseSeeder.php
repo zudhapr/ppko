@@ -23,11 +23,9 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call([
-            FertigationSeeder::class,
-        ]);
-
-        $this->call([
+            GrowthPhaseSeeder::class,
             DeviceSeeder::class,
+            FertigationSeeder::class,
         ]);
     }
 }

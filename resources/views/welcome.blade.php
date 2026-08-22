@@ -5,6 +5,95 @@
 @section('content')
 
 <h1>Dashboard Fertigasi</h1>
+<div class="section">
+
+    <h2>Status Perangkat ESP</h2>
+
+    @if($device)
+
+        <table>
+
+            <tr>
+                <th>Nama Device</th>
+                <td>{{ $device->name }}</td>
+            </tr>
+
+            <tr>
+                <th>Device Code</th>
+                <td>{{ $device->device_code }}</td>
+            </tr>
+
+            <tr>
+                <th>Status</th>
+                <td>
+
+                    @if($device->is_online)
+
+                        <span class="badge active">
+                            ONLINE
+                        </span>
+
+                    @else
+
+                        <span class="badge inactive">
+                            OFFLINE
+                        </span>
+
+                    @endif
+
+                </td>
+            </tr>
+
+            <tr>
+                <th>Mode</th>
+                <td>{{ $device->mode }}</td>
+            </tr>
+
+            <tr>
+                <th>HST Device</th>
+                <td>
+                    {{ $device->current_hst ?? '-' }}
+                </td>
+            </tr>
+
+            <tr>
+                <th>IP Address</th>
+                <td>
+                    {{ $device->ip_address ?? '-' }}
+                </td>
+            </tr>
+
+            <tr>
+                <th>Firmware</th>
+                <td>
+                    {{ $device->firmware_version ?? '-' }}
+                </td>
+            </tr>
+
+            <tr>
+                <th>Last Seen</th>
+                <td>
+                    {{ $device->last_seen
+                        ? $device->last_seen->format(
+                            'd-m-Y H:i:s'
+                        )
+                        : '-'
+                    }}
+                </td>
+            </tr>
+
+        </table>
+
+    @else
+
+        <p>
+            Belum ada perangkat ESP yang terdaftar.
+        </p>
+
+    @endif
+
+</div>
+
 
 <div class="cards">
 
